@@ -151,7 +151,7 @@ func listRemoteVersions() error {
 	}
 
 	if listLimit > 0 && listLimit < len(versions) {
-		ui.PrintHint(fmt.Sprintf("Showing first %d versions. Use -n 0 to show all.", listLimit))
+		ui.PrintHint("Showing first %d versions. Use -n 0 to show all.", listLimit)
 	}
 
 	return nil

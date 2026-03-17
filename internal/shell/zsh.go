@@ -71,9 +71,9 @@ _govm_auto_switch() {
                     ln -sfn "$GOVM_ROOT/versions/$target_version/go" "$GOVM_ROOT/current" 2>/dev/null
                     print -P "%F{cyan}govm:%f switched to Go $target_version (from $go_file)"
                 elif (( $+commands[govm] )); then
-                    # Version not installed, try to install if auto_install is enabled
+                    # Version not installed, use govm use which auto-installs if enabled
                     print -P "%F{yellow}govm:%f Go $version required (from $go_file), installing..."
-                    govm install "$version" --default
+                    govm use "$version"
                 fi
             fi
         fi

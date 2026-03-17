@@ -5,6 +5,10 @@ import (
 	"github.com/wenzzy/govm/internal/version"
 )
 
+var (
+	useDefault bool
+)
+
 var useCmd = &cobra.Command{
 	Use:     "use <version|alias>",
 	Aliases: []string{"switch", "select"},
@@ -16,6 +20,7 @@ it will be downloaded and installed automatically.
 
 Examples:
   govm use 1.22.0             Switch to Go 1.22.0
+  govm use 1.22 --default     Switch and set as default
   govm use stable             Switch to the stable alias
   govm use .                  Use version from go.mod/go.work
   g use 1.21.0                Short form`,
@@ -33,6 +38,18 @@ Examples:
 			return mgr.UseFromProject("")
 		}
 
-		return mgr.Use(ver)
+		if err := mgr.Use(ver); err != nil {
+			return err
+		}
+
+		if useDefault {
+			return mgr.SetDefault(ver)
+		}
+
+		return nil
 	},
+}
+
+func init() {
+	useCmd.Flags().BoolVarP(&useDefault, "default", "d", false, "Set as default version")
 }

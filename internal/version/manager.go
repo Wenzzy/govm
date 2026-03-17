@@ -2,6 +2,7 @@ package version
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/wenzzy/govm/internal/config"
 	"github.com/wenzzy/govm/internal/ui"
@@ -43,10 +44,46 @@ func NewManager() (*Manager, error) {
 	}, nil
 }
 
+// resolveFullVersion resolves a partial version like "1.26" to a full version like "1.26.2"
+// by checking locally installed versions first, then querying go.dev
+func (m *Manager) resolveFullVersion(version string) string {
+	parts := strings.Split(version, ".")
+	if len(parts) >= 3 {
+		return version // Already a full version (X.Y.Z)
+	}
+
+	// First check locally installed versions for a match
+	installed, err := m.installer.ListInstalled()
+	if err == nil {
+		prefix := version + "."
+		var best string
+		for _, v := range installed {
+			if strings.HasPrefix(v, prefix) {
+				if best == "" || v > best {
+					best = v
+				}
+			}
+		}
+		if best != "" {
+			return best
+		}
+	}
+
+	// Query go.dev for the latest patch version
+	full, err := NormalizeDetectedVersion(version)
+	if err != nil {
+		return version
+	}
+	return full
+}
+
 // Install downloads and installs a Go version
 func (m *Manager) Install(version string, setDefault bool, showProgress bool) error {
 	// Normalize version
 	version = config.NormalizeVersion(version)
+
+	// Resolve partial version (e.g., 1.26 -> 1.26.2)
+	version = m.resolveFullVersion(version)
 
 	// Check if already installed
 	if m.installer.IsInstalled(version) {
@@ -125,6 +162,9 @@ func (m *Manager) Use(version string) error {
 	// Resolve alias if needed
 	version = config.ResolveVersion(version)
 
+	// Resolve partial version (e.g., 1.26 -> 1.26.2)
+	version = m.resolveFullVersion(version)
+
 	if !m.installer.IsInstalled(version) {
 		// Check if auto-install is enabled
 		cfg := config.Get()
@@ -188,6 +228,7 @@ func (m *Manager) GetGoBinary(version string) (string, error) {
 // SetDefault sets the default Go version in config
 func (m *Manager) SetDefault(version string) error {
 	version = config.NormalizeVersion(version)
+	version = m.resolveFullVersion(version)
 
 	cfg := config.Get()
 	cfg.DefaultVersion = version
@@ -208,6 +249,9 @@ func (m *Manager) GetDefault() string {
 // QuietUse switches to a version without output (for shell hooks)
 func (m *Manager) QuietUse(version string) error {
 	version = config.ResolveVersion(version)
+
+	// Resolve partial version (e.g., 1.26 -> 1.26.2)
+	version = m.resolveFullVersion(version)
 
 	if !m.installer.IsInstalled(version) {
 		cfg := config.Get()

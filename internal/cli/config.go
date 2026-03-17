@@ -71,7 +71,7 @@ func showConfig() error {
 
 	paths, _ := config.GetPaths()
 	ui.Println()
-	ui.PrintHint(fmt.Sprintf("Config file: %s", paths.Config))
+	ui.PrintHint("Config file: %s", paths.Config)
 
 	return nil
 }
